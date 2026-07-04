@@ -95,6 +95,8 @@ resource "aws_instance" "jenkins" {
     jcasc_content          = file("${path.module}/jcasc/jenkins.yaml")
   })
 
+  user_data_replace_on_change = true
+
   tags = {
     Name    = "infra-perez-wiki-jenkins"
     Project = "infra-perez-wiki"
