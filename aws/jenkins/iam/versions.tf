@@ -7,6 +7,12 @@ terraform {
       version = "~> 5.60"
     }
   }
+
+  # Bucket/region/key supplied via -backend-config at init time (see README).
+  backend "s3" {
+    encrypt      = true
+    use_lockfile = true
+  }
 }
 
 provider "aws" {
