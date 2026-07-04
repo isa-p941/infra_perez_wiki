@@ -1,0 +1,37 @@
+services:
+  jenkins:
+    image: jenkins/jenkins:lts-jdk17
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      CASC_JENKINS_CONFIG: /var/jenkins_home/casc/jenkins.yaml
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
+      LINODE_HOST: "${LINODE_HOST}"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - ./jcasc/jenkins.yaml:/var/jenkins_home/casc/jenkins.yaml:ro
+      - /opt/jenkins/secrets:/var/jenkins_home/secrets:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    # Secrets are files on disk (never baked into the image or env at build
+    # time); load them into env vars here so JCasC's ${VAR} substitution
+    # picks them up, then install plugins and start Jenkins.
+    entrypoint: >
+      bash -c "export ADMIN_PASSWORD=$$(cat /var/jenkins_home/secrets/admin_password) &&
+      export LINODE_SSH_KEY=$$(cat /var/jenkins_home/secrets/linode_ssh_key) &&
+      jenkins-plugin-cli --plugins docker-plugin docker-workflow git
+      ssh-agent configuration-as-code workflow-aggregator &&
+      /usr/local/bin/jenkins.sh"
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /opt/jenkins/exporter-config:/etc/node-exporter:ro
+    command:
+      - "--web.config.file=/etc/node-exporter/web-config.yml"
+
+volumes:
+  jenkins_home:
