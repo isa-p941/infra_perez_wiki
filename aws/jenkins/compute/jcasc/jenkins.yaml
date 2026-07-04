@@ -37,7 +37,7 @@ jobs:
                     steps {
                       sshagent(credentials: ['linode-ssh-key']) {
                         sh """
-                          ssh -o StrictHostKeyChecking=no jenkins-deploy@$${env.LINODE_HOST} '
+                          ssh -o StrictHostKeyChecking=no jenkins-deploy@$env.LINODE_HOST '
                             cd /home/perez-wiki/perez_wiki &&
                             git pull origin main &&
                             source venv/bin/activate &&
