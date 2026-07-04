@@ -1,16 +1,13 @@
 # infra_perez_wiki
 
 Infrastructure for a Jenkins CI cluster (AWS) and a Grafana/Prometheus/Loki monitoring
-stack (Azure), built around the real [perez_wiki](https://www.perez.wiki) website
-(hosted on Linode, unchanged). This is a portfolio project — the goal is a working,
-cost-conscious, on-demand setup that also holds up as an interview talking point, not
-just the fastest path to "it runs."
+stack (Azure), built around my [perez_wiki](https://www.perez.wiki) website.
 
 **Status: scaffold only.** Nothing in `aws/` or `azure/` has real resources yet, and
 nothing has been applied. See [Build order](#build-order) for what's next.
 
 ## Architecture
-
+*Chart produced by Anthropic's Claude*
 ```mermaid
 flowchart TB
     subgraph GH["GitHub"]
@@ -77,10 +74,16 @@ AWS/Jenkins path is ever broken.
 
 ```
 bootstrap/
-  aws/      one-time, locally-applied TF that creates the S3 bucket + KMS key
-            used as the remote state backend for aws/jenkins. Chicken-and-egg
-            problem: you can't store state for the thing that creates your
-            state storage, so this is applied manually, once, with local state.
+  aws/      TF that creates the S3 bucket used as the remote state backend
+            for aws/jenkins (SSE-S3, no customer-managed KMS key needed).
+            Chicken-and-egg problem: you can't store state for the thing
+            that creates your state storage. Solved without giving up on
+            Terraform or a manual one-time apply: a deterministic
+            account-ID-based bucket name plus a belt-and-suspenders
+            create/import pattern (guarded `import` block + a
+            `concurrency`-gated retry in the calling workflow) means this
+            runs automatically, idempotently, on every deploy -- see
+            bootstrap/aws/README.md for the full mechanics.
   azure/    same idea, creates the Azure Storage Account + container used as
             the remote state backend for azure/monitoring.
 aws/
@@ -103,8 +106,7 @@ Source of truth is GitHub Actions encrypted secrets. Materialized at deploy time
 never committed anywhere:
 
 - **AWS side:** SSM Parameter Store, Standard tier, `SecureString` type, encrypted
-  with the AWS-managed KMS key (`aws/ssm`) — genuinely free (no Secrets Manager,
-  which costs $0.40/secret/month with no free tier).
+  with the AWS-managed KMS key (`aws/ssm`) to stay completely free.
 - **Azure side:** no Key Vault — injected directly into native Kubernetes Secrets
   at deploy time, since the AKS cluster is fully ephemeral anyway. RBAC is scoped
   per-ServiceAccount (`get` on a specific named Secret, never namespace-wide
@@ -117,7 +119,7 @@ values from CLI output, not from the state file itself. Secrets are never echoed
 in workflow steps, always passed via `env:` (not CLI args), and any Terraform
 variable/output touching one is marked `sensitive = true`.
 
-## Cost (on-demand, fully ephemeral — the whole point)
+## Cost (on-demand, fully ephemeral)
 
 | Piece | Compute | Per demo-hour | Always-on equivalent (for context) |
 |---|---|---|---|
@@ -128,12 +130,14 @@ No NAT gateway, no load balancer, no EKS/AKS Standard-tier control-plane fee.
 Everything (including state-backend-adjacent storage created outside `bootstrap/`)
 is destroyed between sessions — see each module's README once it exists for exact
 `terraform destroy` scope and any easy-to-miss lingering resources (Elastic
-IPs/Public IPs left allocated-but-unattached, etc.).
+IPs/Public IPs left allocated-but-unattached, etc.). 
 
 ## Build order
 
-1. `bootstrap/aws` and `bootstrap/azure` — create the remote state backends
-   (applied once, manually, with local state).
+1. `bootstrap/aws` and `bootstrap/azure` — create the remote state backends.
+   Both run automatically as part of the on-demand deploy workflows (no
+   manual one-time apply) via a deterministic-naming + guarded-import
+   pattern; see bootstrap/aws/README.md for the mechanics.
 2. `aws/jenkins` — EC2 + Docker Compose Jenkins, IAM/OIDC, SSM parameters.
 3. `azure/monitoring` — AKS + Helm-installed Grafana/Prometheus/Loki, RBAC,
    Kubernetes Secrets wiring.
