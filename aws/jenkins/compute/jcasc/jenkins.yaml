@@ -1,0 +1,62 @@
+jenkins:
+  systemMessage: "infra_perez_wiki's ephemeral Jenkins: call her IPWEJ"
+  numExecutors: 2
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: admin
+          password: "${ADMIN_PASSWORD}"
+  authorizationStrategy:
+    globalMatrix:
+      permissions:
+        - "Overall/Administer:admin"
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - basicSSHUserPrivateKey:
+              scope: GLOBAL
+              id: linode-ssh-key
+              username: perez-wiki
+              privateKeySource:
+                directEntry:
+                  privateKey: "${LINODE_SSH_KEY}"
+
+jobs:
+  - script: >
+      pipelineJob('deploy-perez-wiki') {
+        definition {
+          cps {
+            script('''
+              pipeline {
+                agent any
+                stages {
+                  stage('Deploy') {
+                    steps {
+                      sshagent(credentials: ['linode-ssh-key']) {
+                        sh """
+                          ssh -o StrictHostKeyChecking=no perez-wiki@${env.LINODE_HOST} '
+                            cd /home/perez-wiki/perez_wiki &&
+                            git pull origin main &&
+                            source venv/bin/activate &&
+                            pip install --upgrade pip &&
+                            pip install -r requirements.txt &&
+                            sudo cp files/perez_wiki /etc/nginx/sites-available/perez_wiki &&
+                            sudo systemctl reload nginx &&
+                            sudo cp files/perez_wiki.service /etc/systemd/system/perez_wiki.service &&
+                            sudo systemctl daemon-reload &&
+                            sudo systemctl restart perez_wiki
+                          '
+                        """
+                      }
+                    }
+                  }
+                }
+              }
+            '''.stripIndent())
+            sandbox()
+          }
+        }
+      }
