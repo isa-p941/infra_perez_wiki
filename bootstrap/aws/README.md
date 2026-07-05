@@ -1,43 +1,34 @@
 # bootstrap/aws
 
-Creates the AWS resources needed to hold Terraform state for `aws/jenkins`:
+**Status: applied.** Creates the AWS resources needed to hold Terraform state
+for `aws/jenkins`:
 
-- S3 bucket for Jenkins. It's versioned, SSE-S3 (AES256) encrypted, all
-  public access blocked, bucket policy denies any non-TLS request.
+- S3 bucket for state. Versioned, SSE-S3 (AES256) encrypted, all public
+  access blocked, bucket policy denies any non-TLS request.
 
-## Idempotent Bootstrap 
+## Design intent vs. what's actually wired up
 
-This config has no persistent backend, I store any relevant historical data
-on my personal machine. The goal is a single button press, here's what happens 
-on the AWS end:
+`main.tf` is written to support a belt-and-suspenders idempotent bootstrap:
+a deterministic account-ID-based bucket name (no coordination needed with
+other configs) plus a `bucket_already_exists` variable gating a native
+`import` block, so re-running this with `terraform apply` is safe whether
+the bucket already exists or not.
 
-1. Runs `terraform apply -var="bucket_already_exists=false"`. If the bucket
-   doesn't exist yet, this creates it and everything else normally.
-2. If that fails with S3's own `BucketAlreadyOwnedByYou` error — meaning an
-   earlier run already created it — the workflow retries with
-   `terraform apply -var="bucket_already_exists=true"`. The `import` block
-   in `main.tf` then adopts the real bucket into this run's state first,
-   and the rest of `apply` reconciles the versioning, encryption, 
-   public-access-block, and policy resources.
-3. The calling workflows (`deploy-everything.yml`, `deploy-jenkins-only.yml`,
-   `destroy-everything.yml`) also set a `concurrency` group, so two runs can
-   never actually execute this sequence at the same time. That's what
-   actually prevents the race in practice; the try/retry above is defense
-   in depth for correctness even if that were somehow bypassed. One could
-   probably clog the queue.
+**That automatic create-or-import dance was never actually wired into
+`deploy-jenkins-only.yml`.** In practice, this config was applied manually,
+once (`terraform apply -var="bucket_already_exists=false"`), and the real
+workflow just computes the deterministic bucket name and assumes it already
+exists — it doesn't attempt to create it, retry on conflict, or import
+anything. If this bucket were ever deleted, the workflow would start failing
+until someone manually re-ran this config.
 
-No manual `terraform apply` is ever required; this runs automatically
-as part of the on-demand deploy lifecycle (see the repo root README).
-`aws/jenkins`'s own state, once this bucket exists, persists normally in it.
-
-## Local dry run (optional for silly geese)
+## Local dry run / re-applying manually
 
 ```
 cd bootstrap/aws
 terraform init
-terraform plan -var="bucket_already_exists=false"   # set to true if it already exists
+terraform plan -var="bucket_already_exists=false"   # or =true if it already exists
 ```
 
 Requires AWS CLI credentials already configured (`aws sts get-caller-identity`
-to verify). This isn't a part of the normal workflow, and creates real resources.
-Ya might break something.
+to verify). Creates a real S3 bucket.

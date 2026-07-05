@@ -3,8 +3,12 @@
 Infrastructure for a Jenkins CI cluster (AWS) and a Grafana/Prometheus/Loki monitoring
 stack (Azure), built around my [perez_wiki](https://www.perez.wiki) website.
 
-**Status: scaffold only.** Nothing in `aws/` or `azure/` has real resources yet, and
-nothing has been applied. See [Build order](#build-order) for what's next.
+**Status:** the AWS/Jenkins side is real and confirmed working end-to-end — `bootstrap/aws`
+and `aws/jenkins/iam` are applied, and `aws/jenkins/compute` deploys automatically via
+GitHub Actions (`perez_wiki`'s "Deploy via Jenkins" button → this repo's
+`deploy-jenkins-only.yml` → fresh Jenkins instance → real deploy to the Linode box).
+The Azure/monitoring side (`bootstrap/azure`, `azure/monitoring`) hasn't been started
+yet. See [Build order](#build-order) for what's next.
 
 ## Architecture
 *Chart produced by Anthropic's Claude*
@@ -55,16 +59,17 @@ flowchart TB
 
 ## Two independent lifecycle paths for Jenkins
 
-1. **Event-triggered, per real deploy.** A push to `perez_wiki`'s `main` branch
-   triggers a workflow (living in the `perez_wiki` repo, calling into Terraform here)
-   that starts the EC2 instance via AWS OIDC, runs a Jenkins job that SSHes into the
-   Linode box and performs the exact same steps the old self-hosted-runner workflow
-   did (`git pull`, reinstall deps, swap the nginx/systemd config files, restart the
-   service), then self-terminates. This is what keeps real site deploys working
-   without Jenkins running 24/7.
-2. **Manual "deploy everything" / "destroy everything" buttons**, defined in this
-   repo, that stand up (or tear down) the full Jenkins + monitoring environment
-   together — for demos, not gating real deploys.
+1. **Built and working**: `perez_wiki`'s "Deploy via Jenkins" workflow (currently
+   `workflow_dispatch`-only, not yet wired to real pushes) calls `deploy-jenkins-only.yml`
+   here, which starts a fresh EC2 instance via AWS OIDC, waits for Jenkins via SSM Run
+   Command, and triggers the `deploy-perez-wiki` job — which SSHes into the Linode box
+   and performs the exact same steps the old self-hosted-runner workflow did (`git pull`,
+   reinstall deps, swap the nginx/systemd config files, restart the service).
+   **Known gap: this does NOT currently self-terminate the instance afterward** —
+   it keeps running (and costing money) until manually destroyed. Adding an automatic
+   teardown step is still pending.
+2. **Not yet built**: manual "deploy everything" / "destroy everything" buttons that
+   stand up (or tear down) the full Jenkins + monitoring environment together, for demos.
 
 The old self-hosted-runner workflow in `perez_wiki` stays registered on the Linode
 box as a **manual fallback** (`workflow_dispatch`, not auto-triggered), in case the
@@ -74,32 +79,48 @@ AWS/Jenkins path is ever broken.
 
 ```
 bootstrap/
-  aws/      TF that creates the S3 bucket used as the remote state backend
-            for aws/jenkins (SSE-S3, no customer-managed KMS key needed).
-            Chicken-and-egg problem: you can't store state for the thing
-            that creates your state storage. Solved without giving up on
-            Terraform or a manual one-time apply: a deterministic
-            account-ID-based bucket name plus a belt-and-suspenders
-            create/import pattern (guarded `import` block + a
-            `concurrency`-gated retry in the calling workflow) means this
-            runs automatically, idempotently, on every deploy -- see
-            bootstrap/aws/README.md for the full mechanics.
-  azure/    same idea, creates the Azure Storage Account + container used as
-            the remote state backend for azure/monitoring.
+  aws/      APPLIED. TF that creates the S3 bucket used as the remote state
+            backend for aws/jenkins (SSE-S3, no customer-managed KMS key
+            needed). Uses a deterministic account-ID-based bucket name and
+            a guarded `import` block designed for belt-and-suspenders
+            idempotent re-runs -- but that automatic create/import dance
+            was never actually wired into `deploy-jenkins-only.yml`, which
+            just assumes the bucket already exists (it does, applied
+            manually once). See bootstrap/aws/README.md.
+  azure/    NOT YET BUILT. Same idea, will create the Azure Storage Account
+            + container used as the remote state backend for azure/monitoring.
 aws/
   jenkins/
-    iam/      OIDC provider + IAM roles -- applied once, manually, never
-              destroyed by the on-demand lifecycle.
-    compute/  EC2 instance, security group, SSM parameters, Docker Compose
-              (Jenkins + node_exporter) -- created/destroyed every session.
+    iam/      APPLIED. OIDC provider + IAM roles -- applied once, manually,
+              never destroyed by the on-demand lifecycle. Permission set
+              grew from real CI errors (see project memory/history) --
+              expect to revisit if new AWS actions get exercised later.
+    compute/  WORKING. EC2 instance, security group, SSM parameters, Docker
+              Compose (Jenkins + node_exporter) -- created every session via
+              `terraform apply -replace="aws_instance.jenkins"` (needed
+              because plain `apply` hasn't reliably detected user_data
+              changes on this resource). Confirmed deploying successfully
+              to the real Linode box via full GitHub Actions automation.
 azure/
-  monitoring/  AKS cluster (Free tier), node pool (3x B2ats_v2), Helm releases
-               for Grafana/Prometheus/Loki, Kubernetes Secrets wiring, RBAC.
+  monitoring/  NOT YET BUILT. Planned: AKS cluster (Free tier), node pool
+               (3x B2ats_v2), Helm releases for Grafana/Prometheus/Loki,
+               Kubernetes Secrets wiring, RBAC.
 .github/workflows/
-  deploy-everything.yml    workflow_dispatch — stands up both stacks + wiring
-  destroy-everything.yml   workflow_dispatch — tears both stacks down
-  deploy-jenkins-only.yml  reusable workflow, called from perez_wiki's
-                           push-triggered path (the event-triggered lifecycle)
+  deploy-jenkins-only.yml  BUILT, working. Reusable (on: workflow_call) --
+                           applies aws/jenkins/compute (with -replace to
+                           force a fresh instance every run), waits for
+                           Jenkins via SSM Run Command (not a direct public
+                           curl -- port 8080 is only open to admin_cidr,
+                           which the runner isn't), then triggers the
+                           deploy-perez-wiki job the same way (crumb fetch
+                           + POST, both over SSM). Called today from
+                           perez_wiki's "Deploy via Jenkins" workflow,
+                           which is workflow_dispatch-only (manual button)
+                           by design -- flip to `push: branches: [main]`
+                           there once confident in this path.
+  deploy-everything.yml    NOT YET BUILT. Planned: stands up both stacks + wiring.
+  destroy-everything.yml   NOT YET BUILT. Teardown is still manual
+                           `terraform destroy` for now.
 ```
 
 ## Secrets
@@ -136,14 +157,15 @@ IPs/Public IPs left allocated-but-unattached, etc.).
 
 ## Build order
 
-1. `bootstrap/aws` and `bootstrap/azure` — create the remote state backends.
-   Both run automatically as part of the on-demand deploy workflows (no
-   manual one-time apply) via a deterministic-naming + guarded-import
-   pattern; see bootstrap/aws/README.md for the mechanics.
-2. `aws/jenkins` — EC2 + Docker Compose Jenkins, IAM/OIDC, SSM parameters.
-3. `azure/monitoring` — AKS + Helm-installed Grafana/Prometheus/Loki, RBAC,
-   Kubernetes Secrets wiring.
-4. Cross-cloud scrape config (Prometheus → Jenkins EC2 + Linode box exporters).
-5. `.github/workflows/` — the two lifecycle paths described above.
-6. Log upload-on-deploy / download-on-teardown to the user's local machine
+1. ✅ `bootstrap/aws` — applied manually, once. (`bootstrap/azure` not started.)
+2. ✅ `aws/jenkins` — EC2 + Docker Compose Jenkins, IAM/OIDC, SSM parameters.
+   Applied and confirmed working via full GitHub Actions automation.
+3. ⬜ `azure/monitoring` — AKS + Helm-installed Grafana/Prometheus/Loki, RBAC,
+   Kubernetes Secrets wiring. Not started.
+4. ⬜ Cross-cloud scrape config (Prometheus → Jenkins EC2 + Linode box exporters).
+5. 🟡 `.github/workflows/` — `deploy-jenkins-only.yml` built and working
+   (manual `workflow_dispatch` trigger only, not yet wired to real pushes,
+   and doesn't yet self-terminate the instance after deploying).
+   `deploy-everything.yml`/`destroy-everything.yml` not started.
+6. ⬜ Log upload-on-deploy / download-on-teardown to the user's local machine
    (deferred — lowest priority, tackled after everything else is connected).
