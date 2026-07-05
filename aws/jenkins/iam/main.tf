@@ -52,7 +52,7 @@ data "aws_iam_policy_document" "github_actions_permissions" {
   statement {
     sid       = "TerraformStateObjects"
     effect    = "Allow"
-    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+    actions   = ["s3:DeleteObject", "s3:GetObject", "s3:PutObject"]
     resources = ["arn:aws:s3:::${local.state_bucket_name}/aws-jenkins-*"]
   }
 
@@ -67,14 +67,18 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     sid    = "EC2Lifecycle"
     effect = "Allow"
     actions = [
+      "ec2:CreateTags",
+      "ec2:DescribeImages",
+      "ec2:DescribeInstanceAttribute",
+      "ec2:DescribeInstanceCreditSpecifications",
+      "ec2:DescribeInstances",
+      "ec2:DescribeInstanceTypes",
+      "ec2:DescribeTags",
+      "ec2:DescribeVolumes",
       "ec2:RunInstances",
-      "ec2:TerminateInstances",
       "ec2:StartInstances",
       "ec2:StopInstances",
-      "ec2:DescribeInstances",
-      "ec2:DescribeImages",
-      "ec2:CreateTags",
-      "ec2:DescribeTags",
+      "ec2:TerminateInstances",
     ]
     resources = ["*"]
   }
@@ -83,13 +87,13 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     sid    = "SecurityGroupManagement"
     effect = "Allow"
     actions = [
+      "ec2:AuthorizeSecurityGroupEgress",
+      "ec2:AuthorizeSecurityGroupIngress",
       "ec2:CreateSecurityGroup",
       "ec2:DeleteSecurityGroup",
       "ec2:DescribeSecurityGroups",
-      "ec2:AuthorizeSecurityGroupIngress",
-      "ec2:AuthorizeSecurityGroupEgress",
-      "ec2:RevokeSecurityGroupIngress",
       "ec2:RevokeSecurityGroupEgress",
+      "ec2:RevokeSecurityGroupIngress",
     ]
     resources = ["*"]
   }
@@ -98,11 +102,12 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     sid    = "SSMParameterManagement"
     effect = "Allow"
     actions = [
-      "ssm:PutParameter",
+      "ssm:AddTagsToResource",
+      "ssm:DeleteParameter",
       "ssm:GetParameter",
       "ssm:GetParameters",
-      "ssm:DeleteParameter",
-      "ssm:AddTagsToResource",
+      "ssm:ListTagsForResource",
+      "ssm:PutParameter",
     ]
     resources = ["arn:aws:ssm:${var.aws_region}:${data.aws_caller_identity.current.account_id}:parameter/infra-perez-wiki/*"]
   }
