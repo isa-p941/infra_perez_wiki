@@ -65,9 +65,11 @@ flowchart TB
    Command, and triggers the `deploy-perez-wiki` job — which SSHes into the Linode box
    and performs the exact same steps the old self-hosted-runner workflow did (`git pull`,
    reinstall deps, swap the nginx/systemd config files, restart the service).
-   **Known gap: this does NOT currently self-terminate the instance afterward** —
-   it keeps running (and costing money) until manually destroyed. Adding an automatic
-   teardown step is still pending.
+   **This does NOT self-terminate the instance afterward** — it keeps running
+   (and costing money) until torn down via the **"Destroy Jenkins"** workflow
+   (`workflow_dispatch`, in this repo's Actions tab) — a deliberate choice:
+   manual-but-button-triggered, not automatic, so a deploy can be inspected
+   in the Jenkins UI before the instance disappears.
 2. **Not yet built**: manual "deploy everything" / "destroy everything" buttons that
    stand up (or tear down) the full Jenkins + monitoring environment together, for demos.
 
@@ -118,9 +120,19 @@ azure/
                            which is workflow_dispatch-only (manual button)
                            by design -- flip to `push: branches: [main]`
                            there once confident in this path.
+  destroy-jenkins.yml      BUILT, working. Self-contained (not a reusable
+                           workflow -- no perez_wiki push event drives this,
+                           it's a pure admin action), workflow_dispatch-only,
+                           triggered directly from this repo's Actions tab.
+                           Needs its own copy of the same 4 secrets
+                           (LINODE_SSH_PRIVATE_KEY, JENKINS_ADMIN_PASSWORD,
+                           EXPORTER_BASIC_AUTH_HASH, ADMIN_CIDR) configured
+                           here, since it isn't called from perez_wiki.
   deploy-everything.yml    NOT YET BUILT. Planned: stands up both stacks + wiring.
-  destroy-everything.yml   NOT YET BUILT. Teardown is still manual
-                           `terraform destroy` for now.
+  destroy-everything.yml   NOT YET BUILT. Would tear down both stacks
+                           together; for now, azure/monitoring doesn't
+                           exist yet anyway, so destroy-jenkins.yml covers
+                           the only thing there currently is to destroy.
 ```
 
 ## Secrets

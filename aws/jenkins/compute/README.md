@@ -58,9 +58,12 @@ terraform apply -replace="aws_instance.jenkins" \
 
 Requires manual run of `aws/jenkins/iam` during first deployment.
 
-## Known gap
+## Tearing down
 
-Neither the automated nor manual path currently tears the instance down
-afterward — it keeps running (and costing money) until you run
-`terraform destroy` yourself. An automatic self-terminate step is still
-pending.
+Nothing tears this down automatically after a deploy — it keeps running
+(and costing money) until destroyed. Use the **"Destroy Jenkins"**
+workflow (`.github/workflows/destroy-jenkins.yml`, `workflow_dispatch`,
+run directly from this repo's Actions tab) rather than a local
+`terraform destroy` — same effect, but callable from anywhere, no local
+Terraform/AWS credentials needed. Needs its own copy of the 4 secrets
+configured on `infra_perez_wiki` directly (not inherited from `perez_wiki`).
