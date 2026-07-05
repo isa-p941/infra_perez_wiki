@@ -1,0 +1,81 @@
+name: Deploy Jenkins Only
+
+on:
+  workflow_call:
+    secrets:
+      LINODE_SSH_PRIVATE_KEY:
+        required: true
+      JENKINS_ADMIN_PASSWORD:
+        required: true
+      EXPORTER_BASIC_AUTH_HASH:
+        required: true
+      ADMIN_CIDR:
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: infra-perez-wiki-aws-jenkins
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aws/jenkins/compute
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::762528398066:role/infra-perez-wiki-github-actions-jenkins
+          aws-region: us-east-1
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.10"
+
+      - name: Compute state bucket name
+        id: bucket
+        run: echo "name=infra-perez-wiki-tfstate-$(aws sts get-caller-identity --query Account --output text)" >> "$GITHUB_OUTPUT"
+
+      - name: Terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ steps.bucket.outputs.name }}" \
+            -backend-config="region=us-east-1" \
+            -backend-config="key=aws-jenkins-compute/terraform.tfstate" \
+            -backend-config="use_lockfile=true"
+
+      # -replace forces a fresh instance every run -- ordinary `apply` has
+      # been unreliable at detecting my changes... but also i'm kinda dumb
+      - name: Terraform apply
+        env:
+          TF_VAR_linode_ssh_private_key: ${{ secrets.LINODE_SSH_PRIVATE_KEY }}
+          TF_VAR_jenkins_admin_password: ${{ secrets.JENKINS_ADMIN_PASSWORD }}
+          TF_VAR_exporter_basic_auth_hash: ${{ secrets.EXPORTER_BASIC_AUTH_HASH }}
+          TF_VAR_admin_cidr: ${{ secrets.ADMIN_CIDR }}
+        run: terraform apply -auto-approve -replace="aws_instance.jenkins"
+
+      - name: Wait for Jenkins to be reachable
+        run: |
+          url=$(terraform output -raw jenkins_url)
+          for i in $(seq 1 30); do
+            if curl -sf "$url/login" > /dev/null; then
+              echo "jenkins_url=$url" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Jenkins never became reachable" >&2
+          exit 1
+
+      - name: Trigger deploy-perez-wiki job
+        env:
+          JENKINS_ADMIN_PASSWORD: ${{ secrets.JENKINS_ADMIN_PASSWORD }}
+        run: |
+          curl -sf -X POST -u "admin:$JENKINS_ADMIN_PASSWORD" \
+            "$jenkins_url/job/deploy-perez-wiki/build"
