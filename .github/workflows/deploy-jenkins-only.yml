@@ -93,8 +93,9 @@ jobs:
           instance_id=$(terraform output -raw instance_id)
           # Jenkins requires a crumb. Let's toss him one. He's earned it.
           remote_script=$(cat <<SCRIPT
-          crumb=\$(curl -sf -u "admin:$JENKINS_ADMIN_PASSWORD" 'http://localhost:8080/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
-          curl -sf -X POST -u "admin:$JENKINS_ADMIN_PASSWORD" -H "\$crumb" http://localhost:8080/job/deploy-perez-wiki/build
+          cookie_jar=\$(mktemp)
+          crumb=\$(curl -sf -c "\$cookie_jar" -u "admin:$JENKINS_ADMIN_PASSWORD" 'http://localhost:8080/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
+          curl -sf -b "\$cookie_jar" -X POST -u "admin:$JENKINS_ADMIN_PASSWORD" -H "\$crumb" http://localhost:8080/job/deploy-perez-wiki/build
           SCRIPT
           )
           params=$(jq -n --arg script "$remote_script" '{commands: [$script]}')
