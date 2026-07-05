@@ -119,6 +119,19 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     resources = ["*"]
   }
 
+  # Lets the workflow check Jenkins's readiness and trigger the deploy job
+  # by running commands on the instance itself
+  statement {
+    sid    = "SSMRunCommand"
+    effect = "Allow"
+    actions = [
+      "ssm:GetCommandInvocation",
+      "ssm:ListCommandInvocations",
+      "ssm:SendCommand",
+    ]
+    resources = ["*"]
+  }
+
   statement {
     sid       = "PassInstanceRole"
     effect    = "Allow"
