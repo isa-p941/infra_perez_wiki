@@ -1,6 +1,7 @@
 name: Destroy Jenkins
 
 # Manual only
+on:
   workflow_dispatch:
 
 permissions:
