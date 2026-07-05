@@ -91,6 +91,7 @@ data "aws_iam_policy_document" "github_actions_permissions" {
       "ec2:AuthorizeSecurityGroupIngress",
       "ec2:CreateSecurityGroup",
       "ec2:DeleteSecurityGroup",
+      "ec2:DescribeNetworkInterfaces",
       "ec2:DescribeSecurityGroups",
       "ec2:RevokeSecurityGroupEgress",
       "ec2:RevokeSecurityGroupIngress",
