@@ -37,12 +37,9 @@ resource "azurerm_storage_container" "tfstate" {
   container_access_type = "private"
 }
 
-# Owner/Contributor on the storage account resource does NOT imply blob
-# data-plane access via Azure AD auth -- that's a separate role, needed
-# even for the account owner, for `use_azuread_auth = true` backends to work.
 resource "azurerm_role_assignment" "self_blob_access" {
   scope                = azurerm_storage_account.state.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id          = data.azurerm_client_config.current.object_id
+  principal_id         = data.azurerm_client_config.current.object_id
 }
 
