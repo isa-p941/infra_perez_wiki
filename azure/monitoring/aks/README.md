@@ -85,6 +85,15 @@ set as `TF_VAR_*` env on the apply step, same as `deploy-jenkins-only.yml`.
 
 ## Applying
 
+Two ways.
+
+**GitHub Actions button** (primary): the **"Deploy Monitoring"** workflow in
+this repo's Actions tab (`.github/workflows/deploy-monitoring.yml`). Reads
+`GRAFANA_ADMIN_PASSWORD` and `LINODE_EXPORTER_PASSWORD` from this repo's
+own secrets, so set those under Settings -> Secrets and variables ->
+Actions first. Tear down with the **"Destroy Monitoring"** workflow.
+
+**Local** (for testing/debugging):
 ```
 bash azure/scripts/tf-init.sh azure/monitoring/aks azure-monitoring-aks.tfstate
 # or: .\azure\scripts\tf-init.ps1 azure\monitoring\aks azure-monitoring-aks.tfstate
@@ -93,8 +102,8 @@ terraform plan
 terraform apply
 ```
 
-Requires `azure/monitoring/iam` applied first, and the two `TF_VAR_*`
-secrets above set in the shell.
+Either way requires `azure/monitoring/iam` applied first. The local path
+also needs the two `TF_VAR_*` secrets above set in the shell.
 
 ## Local testing with `kind` 
 
@@ -334,10 +343,11 @@ gain, so it's left as the chart's default.
 
 ## Still to come
 
-Log shipping (Promtail) from the Linode box, optional nginx
+Log shipping (Promtail) from the Linode box, and optional nginx
 request-metrics (requires editing tracked website config, deferred
-pending a separate decision), and a GitHub Actions deploy/destroy
-workflow for this side (currently applied and destroyed by hand).
+pending a separate decision). The GitHub Actions deploy/destroy workflows
+now exist (`deploy-monitoring.yml`/`destroy-monitoring.yml`) but haven't
+been run through the button yet, only applied by hand.
 
 ## Note: Grafana/Loki chart repository
 

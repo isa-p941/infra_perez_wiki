@@ -157,12 +157,21 @@ azure/
                            (LINODE_SSH_PRIVATE_KEY, JENKINS_ADMIN_PASSWORD,
                            EXPORTER_BASIC_AUTH_HASH, ADMIN_CIDR) configured
                            here, since it isn't called from perez_wiki.
-  deploy-everything.yml    NOT YET BUILT. Planned: stands up both stacks
-                           together and wires the cross-cloud scrape config.
-  destroy-everything.yml   NOT YET BUILT. Would tear down both stacks
-                           together. There's also no deploy/destroy button
-                           for azure/monitoring/aks by itself yet, so that
-                           side is torn down with a local terraform destroy.
+  deploy-monitoring.yml    BUILT. Azure equivalent of deploy-jenkins-only.
+                           workflow_call + workflow_dispatch. Azure OIDC
+                           login, applies azure/monitoring/aks (tf-init +
+                           apply), then lists the monitoring pods. Reads 2
+                           secrets from this repo: GRAFANA_ADMIN_PASSWORD,
+                           LINODE_EXPORTER_PASSWORD. Not yet run through the
+                           button (only applied by hand so far).
+  destroy-monitoring.yml   BUILT. workflow_dispatch-only, same concurrency
+                           group as deploy-monitoring. Needs the same 2
+                           secrets (destroy still needs the vars set).
+  deploy-everything.yml    NOT YET BUILT. Planned: calls deploy-jenkins-only
+                           and deploy-monitoring together, wires the
+                           cross-cloud scrape config.
+  destroy-everything.yml   NOT YET BUILT. Would call both destroy workflows
+                           together.
 ```
 
 ## Secrets
@@ -220,12 +229,12 @@ IPs/Public IPs left allocated but unattached, etc.).
 4. 🟡 Cross-cloud scrape config. Prometheus scraping the Linode box's
    `node_exporter` is confirmed working. Scraping the Jenkins EC2
    instance's own `node_exporter` isn't wired up yet.
-5. 🟡 `.github/workflows/`. `deploy-jenkins-only.yml` and
-   `destroy-jenkins.yml` are built and working for the AWS side (manual
-   `workflow_dispatch` trigger only, not yet wired to real pushes, and
-   doesn't self-terminate the instance after deploying). Nothing built
-   yet for the Azure side. `deploy-everything.yml`/`destroy-everything.yml`
-   not started.
+5. 🟡 `.github/workflows/`. AWS side (`deploy-jenkins-only.yml`,
+   `destroy-jenkins.yml`) built and working. Azure side
+   (`deploy-monitoring.yml`, `destroy-monitoring.yml`) built, not yet run
+   through the button. All `workflow_dispatch` (manual), not yet wired to
+   real pushes. `deploy-everything.yml`/`destroy-everything.yml` not
+   started.
 6. ⬜ Log upload-on-deploy / download-on-teardown to the user's local
    machine. Deferred, lowest priority, tackled after everything else is
    connected.
