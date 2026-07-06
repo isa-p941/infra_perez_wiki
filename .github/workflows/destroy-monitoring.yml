@@ -1,0 +1,47 @@
+name: Destroy Monitoring
+
+# Manual only
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: infra-perez-wiki-azure-monitoring
+  cancel-in-progress: false
+
+# Plain identifiers, not secrets (see azure/monitoring/iam).
+env:
+  ARM_USE_OIDC: "true"
+  ARM_CLIENT_ID: ee9fae26-0c8e-4e3b-a30b-1ce55cc0b4c3
+  ARM_TENANT_ID: ce562e30-5079-467d-855b-ebb9ba0228d1
+  ARM_SUBSCRIPTION_ID: 813b03cb-90d8-4571-aa49-e0715c7536b5
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ env.ARM_CLIENT_ID }}
+          tenant-id: ${{ env.ARM_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.10"
+
+      - name: Terraform init
+        run: bash azure/scripts/tf-init.sh azure/monitoring/aks azure-monitoring-aks.tfstate
+
+      # destroy still needs the vars set: they have no defaults.
+      - name: Terraform destroy
+        working-directory: azure/monitoring/aks
+        env:
+          TF_VAR_grafana_admin_password: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+          TF_VAR_linode_exporter_password: ${{ secrets.LINODE_EXPORTER_PASSWORD }}
+        run: terraform destroy -auto-approve
