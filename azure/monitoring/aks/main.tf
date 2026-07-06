@@ -78,6 +78,4 @@ resource "helm_release" "grafana" {
     name  = "adminPassword"
     value = var.grafana_admin_password
   }
-
-  depends_on = [helm_release.prometheus, helm_release.loki]
 }
