@@ -16,11 +16,11 @@ the bucket already exists or not.
 
 **That automatic create-or-import dance was never actually wired into
 `deploy-jenkins-only.yml`.** In practice, this config was applied manually,
-once (`terraform apply -var="bucket_already_exists=false"`), and the real
-workflow just computes the deterministic bucket name and assumes it already
-exists — it doesn't attempt to create it, retry on conflict, or import
-anything. If this bucket were ever deleted, the workflow would start failing
-until someone manually re-ran this config.
+once (`terraform apply -var="bucket_already_exists=false"`). The real
+workflow just computes the deterministic bucket name and assumes it
+already exists. It doesn't try to create it, retry on conflict, or import
+anything. If this bucket were ever deleted, the workflow would start
+failing until someone manually re-ran this config.
 
 ## Local dry run / re-applying manually
 

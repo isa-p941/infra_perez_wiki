@@ -4,7 +4,7 @@ Creates the Azure resources needed to hold Terraform state for
 `azure/monitoring`:
 
 - Resource group for state storage
-- Storage Account — `LRS` (locally redundant, cheapest replication tier),
+- Storage Account: `LRS` (locally redundant, cheapest replication tier),
   TLS 1.2 minimum, versioning enabled (recovery path if a bad `apply`
   corrupts state), private container (no anonymous blob access)
 - Blob container within it for the actual state files
@@ -13,15 +13,15 @@ Deterministic naming (storage account name derived from your Azure
 subscription ID) so `azure/monitoring`'s backend config can reference the
 same name without needing to read this config's outputs first.
 
-## Applied manually, once — not automated
+## Applied manually, once
 
-Same chicken-and-egg reason as `bootstrap/aws` (can't store state for the
-thing that creates your state storage), but **unlike `bootstrap/aws`, this
-one doesn't attempt the belt-and-suspenders auto-bootstrap dance at all** —
-that pattern was designed for the AWS side but never actually got wired into
-the real GitHub Actions workflow there either (see `bootstrap/aws/README.md`).
-This one is upfront from the start: apply it once by hand, and any workflow
-that needs this storage account just assumes it exists.
+Same chicken-and-egg reason as `bootstrap/aws`: you can't store state for
+the thing that creates your state storage. This config doesn't attempt
+the belt-and-suspenders auto-bootstrap dance `bootstrap/aws` was designed
+for either. That pattern never actually got wired into the real GitHub
+Actions workflow there (see `bootstrap/aws/README.md`). Apply it once by
+hand, and any workflow that needs this storage account just assumes it
+exists.
 
 ```
 cd bootstrap/azure
@@ -34,9 +34,9 @@ real Azure resources.
 
 ## Troubleshooting
 
-**`Error: Plugin did not respond` on `provider "azurerm"`** — this is the
-provider binary itself crashing during setup, not a normal config error.
-In order of likelihood:
+**`Error: Plugin did not respond` on `provider "azurerm"`**: the provider
+binary itself is crashing during setup, not a normal config error. In
+order of likelihood:
 
 1. Confirm the CLI session is actually healthy: `az account show` should
    print clean JSON with your subscription ID/tenant. If it errors or looks
