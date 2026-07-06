@@ -26,7 +26,8 @@ cat > /opt/jenkins/exporter-config/web-config.yml <<EOF
 basic_auth_users:
   metrics: $${exporter_hash}
 EOF
-chmod 600 /opt/jenkins/exporter-config/web-config.yml
+
+chmod 644 /opt/jenkins/exporter-config/web-config.yml
 
 cat > /opt/jenkins/app/jcasc/jenkins.yaml <<'JCASC_EOF'
 ${jcasc_content}
