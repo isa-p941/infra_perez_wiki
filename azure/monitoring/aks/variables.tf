@@ -14,9 +14,10 @@ variable "node_vm_size" {
   default = "Standard_D2s_v7"
 }
 
+# free trial nonsense
 variable "node_count" {
   type    = number
-  default = 3
+  default = 2
 }
 
 variable "state_storage_account_prefix" {
@@ -29,4 +30,16 @@ variable "state_resource_group_name" {
   description = "Must match bootstrap/azure's resource_group_name."
   type        = string
   default     = "infra-perez-wiki-tfstate-rg"
+}
+
+variable "grafana_admin_password" {
+  description = "Grafana admin password for the real deployment."
+  type        = string
+  sensitive   = true
+}
+
+variable "linode_exporter_password" {
+  description = "node_exporter basic-auth password"
+  type        = string
+  sensitive   = true
 }

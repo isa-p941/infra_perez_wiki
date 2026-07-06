@@ -10,10 +10,10 @@ data "terraform_remote_state" "iam" {
   backend = "azurerm"
   config = {
     storage_account_name = local.state_storage_account_name
-    container_name        = "tfstate"
-    resource_group_name    = var.state_resource_group_name
-    key                    = "azure-monitoring-iam.tfstate"
-    use_azuread_auth       = true
+    container_name       = "tfstate"
+    resource_group_name  = var.state_resource_group_name
+    key                  = "azure-monitoring-iam.tfstate"
+    use_azuread_auth     = true
   }
 }
 
@@ -33,4 +33,53 @@ resource "azurerm_kubernetes_cluster" "monitoring" {
   identity {
     type = "SystemAssigned"
   }
+}
+
+resource "kubernetes_namespace" "monitoring" {
+  metadata {
+    name = "monitoring"
+  }
+
+  depends_on = [azurerm_kubernetes_cluster.monitoring]
+}
+
+resource "helm_release" "prometheus" {
+  name       = "prometheus"
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "prometheus"
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+
+  # .tftpl variant, not helm/prometheus-values.yaml
+  # renders node_exporter password into extraScrapeConfigs instead of plaintext
+  values = [templatefile("${path.module}/helm/prometheus-values.yaml.tftpl", {
+    linode_exporter_password = var.linode_exporter_password
+  })]
+}
+
+resource "helm_release" "loki" {
+  name = "loki"
+  # grafana.github.io/helm-charts's chart source migrated here (still
+  # includes 7.0.0 and full prior history) -- see README.
+  repository = "https://grafana-community.github.io/helm-charts"
+  chart      = "loki"
+  version    = "7.0.0" # pinned -- matches the version validated locally against kind
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+
+  values = [file("${path.module}/helm/loki-values.yaml")]
+}
+
+resource "helm_release" "grafana" {
+  name       = "grafana"
+  repository = "https://grafana-community.github.io/helm-charts"
+  chart      = "grafana"
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+
+  values = [file("${path.module}/helm/grafana-values.yaml")]
+
+  set_sensitive {
+    name  = "adminPassword"
+    value = var.grafana_admin_password
+  }
+
+  depends_on = [helm_release.prometheus, helm_release.loki]
 }
