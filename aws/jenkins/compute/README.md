@@ -32,14 +32,18 @@ Manager via IAM. No SSH port is open.
 
 ## Automated path (primary, how this actually gets used)
 
-`perez_wiki`'s "Deploy via Jenkins" workflow (currently `workflow_dispatch`
-only) calls this repo's `deploy-jenkins-only.yml`, which runs `terraform
-apply -replace="aws_instance.jenkins"`. The `-replace` is required every
-time, since plain `apply` hasn't reliably detected changes to `user_data`
-on this resource (see project history/memory for the underlying
+`deploy-jenkins-only.yml` runs `terraform apply
+-replace="aws_instance.jenkins"`. The `-replace` is required every time,
+since plain `apply` hasn't reliably detected changes to `user_data` on
+this resource (see project history/memory for the underlying
 `user_data_replace_on_change` quirk). It then waits for Jenkins and
 triggers the deploy job over SSM Run Command, not the public network,
 since port 8080 is only open to `admin_cidr`.
+
+Two ways to run it: `perez_wiki`'s "Deploy via Jenkins" button (currently
+`workflow_dispatch` only) calls it as a reusable workflow, or its own
+"Deploy Jenkins Only" button in this repo's Actions tab
+(`workflow_dispatch`) runs it directly.
 
 ## Manual apply (for testing/debugging)
 

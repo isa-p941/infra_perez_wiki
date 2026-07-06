@@ -62,12 +62,18 @@ flowchart TB
 ## Two independent lifecycle paths for Jenkins
 
 1. **Built and working**: `perez_wiki`'s "Deploy via Jenkins" workflow calls
-   `deploy-jenkins-only.yml` here. It's currently `workflow_dispatch`-only, not yet
-   wired to real pushes. It starts a fresh EC2 instance via AWS OIDC, waits for
+   `deploy-jenkins-only.yml` here. That caller is currently `workflow_dispatch`-only,
+   not yet wired to real pushes. It starts a fresh EC2 instance via AWS OIDC, waits for
    Jenkins via SSM Run Command, and triggers the `deploy-perez-wiki` job, which SSHes
    into the Linode box and runs the same steps the old self-hosted-runner workflow
    did: `git pull`, reinstall deps, swap the nginx/systemd config files, restart the
    service.
+
+   `deploy-jenkins-only.yml` also has its own `workflow_dispatch` trigger, so it
+   shows up as a **"Deploy Jenkins Only"** button in this repo's Actions tab too,
+   for redeploying Jenkins without going through `perez_wiki`. That path reads this
+   repo's own 4 secrets (the same ones `destroy-jenkins.yml` needs); the `perez_wiki`
+   caller passes them in instead.
 
    This does not self-terminate the instance afterward. It keeps running, and
    costing money, until torn down with the **"Destroy Jenkins"** workflow
@@ -127,18 +133,22 @@ azure/
             yet, so it's applied and destroyed from a local shell. See
             azure/monitoring/aks/README.md.
 .github/workflows/
-  deploy-jenkins-only.yml  BUILT, working. Reusable (on: workflow_call).
-                           Applies aws/jenkins/compute (with -replace to
-                           force a fresh instance every run), waits for
-                           Jenkins via SSM Run Command (not a direct public
-                           curl, since port 8080 is only open to admin_cidr
-                           and the runner isn't in it), then triggers the
-                           deploy-perez-wiki job the same way (crumb fetch
-                           + POST, both over SSM). Called today from
-                           perez_wiki's "Deploy via Jenkins" workflow,
-                           which is workflow_dispatch-only (manual button)
-                           by design. Flip to `push: branches: [main]`
-                           there once confident in this path.
+  deploy-jenkins-only.yml  BUILT, working. Both workflow_call (reusable,
+                           called by perez_wiki's "Deploy via Jenkins") and
+                           workflow_dispatch (its own button in this repo's
+                           Actions tab, for redeploying without going through
+                           perez_wiki). Applies aws/jenkins/compute (with
+                           -replace to force a fresh instance every run),
+                           waits for Jenkins via SSM Run Command (not a
+                           direct public curl, since port 8080 is only open
+                           to admin_cidr and the runner isn't in it), then
+                           triggers the deploy-perez-wiki job the same way
+                           (crumb fetch + POST, both over SSM). The trigger
+                           step reads the Jenkins password from SSM Parameter
+                           Store on the instance, so it never rides in the
+                           Run Command payload. The perez_wiki caller stays
+                           workflow_dispatch-only by design; flip it to
+                           `push: branches: [main]` once confident.
   destroy-jenkins.yml      BUILT, working. Self-contained, not a reusable
                            workflow, since no perez_wiki push event should
                            drive a destroy. workflow_dispatch-only,
