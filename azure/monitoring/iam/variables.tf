@@ -19,7 +19,7 @@ variable "infra_repo" {
 }
 
 variable "state_storage_account_prefix" {
-  description = "Must match bootstrap/azure's storage_account_prefix -- used to recompute the same deterministic name."
+  description = "Must match bootstrap/azure's storage_account_prefix. Used to recompute the same deterministic name."
   type        = string
   default     = "infraperezwiki"
 }

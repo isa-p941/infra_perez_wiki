@@ -1,0 +1,35 @@
+# Values for the prometheus-community/prometheus chart.
+# Local kind-testing variant. See prometheus-values.yaml.tftpl for the real deploy.
+server:
+  persistentVolume:
+    enabled: false
+
+# Scrapes node_exporter on the real Linode website box, not an in-cluster target.
+# Password is a placeholder here; real value only lives in the .tftpl variant.
+extraScrapeConfigs: |
+  - job_name: 'perez-wiki-linode'
+    scheme: http
+    basic_auth:
+      username: metrics
+      password: not-a-real-password
+    static_configs:
+      - targets: ['perez.wiki:9100']
+
+alertmanager:
+  enabled: false
+
+# Sub-chart dependency alias, not `pushgateway:`
+prometheus-pushgateway:
+  enabled: false
+
+# Sub-chart dependency alias, not `nodeExporter:`
+prometheus-node-exporter:
+  enabled: true
+
+# No kubernetes_sd_configs used, so no cluster API access needed
+serviceAccounts:
+  server:
+    automountServiceAccountToken: false
+
+rbac:
+  create: false

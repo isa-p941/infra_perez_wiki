@@ -1,7 +1,7 @@
 data "azurerm_client_config" "current" {}
 
 locals {
-  subscription_id_short = substr(replace(data.azurerm_client_config.current.subscription_id, "-", ""), 0, 8)
+  subscription_id_short      = substr(replace(data.azurerm_client_config.current.subscription_id, "-", ""), 0, 8)
   state_storage_account_name = "${var.state_storage_account_prefix}${local.subscription_id_short}"
 }
 
@@ -27,7 +27,7 @@ resource "azuread_service_principal" "github_actions" {
   client_id = azuread_application.github_actions.client_id
 }
 
-# One federated credential per exact subject GitHub's OIDC token
+# One federated credential per exact OIDC subject
 resource "azuread_application_federated_identity_credential" "perez_wiki_main" {
   application_id = azuread_application.github_actions.id
   display_name   = "perez-wiki-main"
@@ -45,7 +45,6 @@ resource "azuread_application_federated_identity_credential" "infra_repo_main" {
 }
 
 # Contributor on just this resource group
-# XXX
 resource "azurerm_role_assignment" "monitoring_rg_contributor" {
   scope                = azurerm_resource_group.monitoring.id
   role_definition_name = "Contributor"

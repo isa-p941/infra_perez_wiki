@@ -53,8 +53,7 @@ jobs:
             -backend-config="key=aws-jenkins-compute/terraform.tfstate" \
             -backend-config="use_lockfile=true"
 
-      # -replace forces a fresh instance every run -- ordinary `apply` has
-      # been unreliable at detecting my changes... but also i'm kinda dumb
+      # -replace forces a fresh instance. Ordinary apply doesn't reliably detect changes.
       - name: Terraform apply
         env:
           TF_VAR_linode_ssh_private_key: ${{ secrets.LINODE_SSH_PRIVATE_KEY }}
@@ -63,7 +62,7 @@ jobs:
           TF_VAR_admin_cidr: ${{ secrets.ADMIN_CIDR }}
         run: terraform apply -auto-approve -replace="aws_instance.jenkins"
 
-      # waits for jenkins to be reachable on the instance itself
+      # Polls via SSM, not a direct curl
       - name: Wait for Jenkins to be reachable
         run: |
           instance_id=$(terraform output -raw instance_id)

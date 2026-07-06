@@ -49,8 +49,7 @@ resource "helm_release" "prometheus" {
   chart      = "prometheus"
   namespace  = kubernetes_namespace.monitoring.metadata[0].name
 
-  # .tftpl variant, not helm/prometheus-values.yaml
-  # renders node_exporter password into extraScrapeConfigs instead of plaintext
+  # Renders the real password via templatefile(), see helm/prometheus-values.yaml.tftpl
   values = [templatefile("${path.module}/helm/prometheus-values.yaml.tftpl", {
     linode_exporter_password = var.linode_exporter_password
   })]
@@ -58,11 +57,10 @@ resource "helm_release" "prometheus" {
 
 resource "helm_release" "loki" {
   name = "loki"
-  # grafana.github.io/helm-charts's chart source migrated here (still
-  # includes 7.0.0 and full prior history) -- see README.
+  # Chart source migrated here from grafana.github.io/helm-charts
   repository = "https://grafana-community.github.io/helm-charts"
   chart      = "loki"
-  version    = "7.0.0" # pinned -- matches the version validated locally against kind
+  version    = "7.0.0" # pinned to match the version validated locally against kind
   namespace  = kubernetes_namespace.monitoring.metadata[0].name
 
   values = [file("${path.module}/helm/loki-values.yaml")]

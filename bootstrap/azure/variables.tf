@@ -9,7 +9,7 @@ variable "resource_group_name" {
 }
 
 variable "storage_account_prefix" {
-  description = "Prefix for the storage account name. Azure storage account names are 3-24 chars, lowercase letters/numbers only -- no hyphens, unlike S3 bucket names."
+  description = "Prefix for the storage account name. Azure storage account names are 3-24 chars, lowercase letters/numbers only. No hyphens, unlike S3 bucket names."
   type        = string
   default     = "infraperezwiki"
 }

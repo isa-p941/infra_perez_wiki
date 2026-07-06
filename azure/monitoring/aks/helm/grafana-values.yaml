@@ -1,0 +1,27 @@
+# Values for the grafana/grafana chart. Local kind-testing variant.
+adminUser: admin
+adminPassword: local-test-password
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-server.monitoring.svc.cluster.local
+        access: proxy
+        isDefault: true
+      - name: Loki
+        type: loki
+        # Routes through the gateway, not the loki service directly
+        url: http://loki-gateway.monitoring.svc.cluster.local
+        access: proxy
+
+service:
+  type: ClusterIP
+
+# No sidecar in use, so no Kubernetes API access needed
+automountServiceAccountToken: false
+
+rbac:
+  create: false

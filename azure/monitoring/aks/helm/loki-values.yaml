@@ -1,0 +1,52 @@
+# Values for the grafana/loki chart, single-binary mode.
+deploymentMode: SingleBinary
+
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+  # Required since we don't provide a real schema_config
+  useTestSchema: true
+
+singleBinary:
+  replicas: 1
+  persistence:
+    enabled: false
+  # Provides a writable /var/loki since persistence is disabled
+  extraVolumes:
+    - name: loki-var
+      emptyDir: {}
+  extraVolumeMounts:
+    - name: loki-var
+      mountPath: /var/loki
+
+# Chart defaults these to nonzero regardless of deploymentMode
+read:
+  replicas: 0
+write:
+  replicas: 0
+backend:
+  replicas: 0
+
+# Not using Loki-based alerting rules
+ruler:
+  enabled: false
+
+# Disables the loki-sc-rules sidecar (unused, and crash-loops if
+# serviceAccount automount below is off while this stays on)
+sidecar:
+  rules:
+    enabled: false
+
+# No component here needs Kubernetes API access
+serviceAccount:
+  automountServiceAccountToken: false
+
+# Chart defaults size these for a real production cluster.
+# Way more than one Standard_D2s_v7 node has.
+resultsCache:
+  allocatedMemory: 256
+chunksCache:
+  allocatedMemory: 256

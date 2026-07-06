@@ -15,7 +15,7 @@ $ErrorActionPreference = "Stop"
 
 $subscriptionId = az account show --query id -o tsv
 if (-not $subscriptionId) {
-    Write-Error "Could not get subscription ID -- make sure 'az login' has been run."
+    Write-Error "Could not get subscription ID. Make sure 'az login' has been run."
     exit 1
 }
 

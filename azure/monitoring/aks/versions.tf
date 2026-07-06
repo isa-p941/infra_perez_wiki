@@ -16,8 +16,7 @@ terraform {
     }
   }
 
-  # storage_account_name, container_name, key, resource_group_name supplied
-  # via -backend-config at init time (see README / azure/scripts/tf-init.*).
+  # Backend config supplied via -backend-config at init time (see README)
   backend "azurerm" {
     use_azuread_auth = true
   }

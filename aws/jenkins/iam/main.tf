@@ -120,8 +120,7 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     resources = ["*"]
   }
 
-  # Lets the workflow check Jenkins's readiness and trigger the deploy job
-  # by running commands on the instance itself
+  # Lets the workflow check readiness and trigger the deploy job via SSM
   statement {
     sid    = "SSMRunCommand"
     effect = "Allow"

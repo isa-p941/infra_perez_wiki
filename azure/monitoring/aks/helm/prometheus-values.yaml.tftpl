@@ -1,0 +1,34 @@
+# Real-deploy variant of prometheus-values.yaml. Rendered via Terraform's
+# templatefile(), not usable directly with `helm -f`.
+server:
+  persistentVolume:
+    enabled: false
+
+# Scrapes node_exporter on the real Linode website box, not an in-cluster target.
+extraScrapeConfigs: |
+  - job_name: 'perez-wiki-linode'
+    scheme: http
+    basic_auth:
+      username: metrics
+      password: ${linode_exporter_password}
+    static_configs:
+      - targets: ['perez.wiki:9100']
+
+alertmanager:
+  enabled: false
+
+# Sub-chart dependency alias, not `pushgateway:`
+prometheus-pushgateway:
+  enabled: false
+
+# Sub-chart dependency alias, not `nodeExporter:`
+prometheus-node-exporter:
+  enabled: true
+
+# No kubernetes_sd_configs used, so no cluster API access needed
+serviceAccounts:
+  server:
+    automountServiceAccountToken: false
+
+rbac:
+  create: false
