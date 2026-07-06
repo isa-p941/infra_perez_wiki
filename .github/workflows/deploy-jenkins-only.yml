@@ -1,6 +1,7 @@
 name: Deploy Jenkins Only
 
 on:
+  # Called by perez_wiki's "Deploy via Jenkins" workflow (secrets passed in).
   workflow_call:
     secrets:
       LINODE_SSH_PRIVATE_KEY:
@@ -11,6 +12,8 @@ on:
         required: true
       ADMIN_CIDR:
         required: true
+  # for testing just jenkins
+  workflow_dispatch:
 
 permissions:
   id-token: write
