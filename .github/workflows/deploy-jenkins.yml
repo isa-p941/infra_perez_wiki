@@ -89,3 +89,19 @@ jobs:
           SCRIPT
           )
           bash "$GITHUB_WORKSPACE/.github/scripts/ssm-run-command.sh" "$instance_id" "$remote_script" 30
+
+      # Renders access info into the run's summary panel.
+      - name: How to Access Jenkins
+        run: |
+          url=$(terraform output -raw jenkins_url)
+          eip=$(terraform output -raw public_ip)
+          {
+            echo "## Jenkins is up"
+            echo ""
+            echo "**UI:** $url  (only reachable from your admin_cidr)"
+            echo ""
+            echo "**Log into metrics via curl:**"
+            echo '```'
+            echo "curl.exe -i -u 'metrics:<exporter password>' http://$eip:9100/metrics"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

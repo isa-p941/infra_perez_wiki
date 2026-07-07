@@ -71,3 +71,26 @@ jobs:
             --name infra-perez-wiki-monitoring \
             --overwrite-existing
           kubectl get pods -n monitoring
+
+      # Renders the access commands into the run's summary panel.
+      - name: How To Access Grafana
+        run: |
+          {
+            echo "## Monitoring is up"
+            echo ""
+            echo "**1. Get cluster credentials:**"
+            echo '```'
+            echo "az aks get-credentials --resource-group infra-perez-wiki-monitoring-rg --name infra-perez-wiki-monitoring --overwrite-existing"
+            echo '```'
+            echo "**2. Grafana** port forward setup:"
+            echo '```'
+            echo "kubectl port-forward -n monitoring svc/grafana 3000:80"
+            echo '```'
+            echo "Then open http://localhost:3000 (user: admin)"
+            echo ""
+            echo "**3. Prometheus targets** port forward setup:"
+            echo '```'
+            echo "kubectl port-forward -n monitoring svc/prometheus-server 9090:80"
+            echo '```'
+            echo "Then open http://localhost:9090/targets"
+          } >> "$GITHUB_STEP_SUMMARY"
