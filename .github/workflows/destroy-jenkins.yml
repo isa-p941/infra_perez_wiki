@@ -1,7 +1,18 @@
 name: Destroy Jenkins
 
-# Manual only
 on:
+  # Callable from destroy-everything (secrets passed in).
+  workflow_call:
+    secrets:
+      LINODE_SSH_PRIVATE_KEY:
+        required: true
+      JENKINS_ADMIN_PASSWORD:
+        required: true
+      EXPORTER_BASIC_AUTH_HASH:
+        required: true
+      ADMIN_CIDR:
+        required: true
+  # Direct button (reads this repo's own secrets).
   workflow_dispatch:
 
 permissions:

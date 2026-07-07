@@ -1,0 +1,28 @@
+name: Deploy Everything
+
+# THE ONE BUTTON: stands up both stacks for a demo.
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+# Two independent stacks, no dependency between them (Prometheus scrapes the
+# Jenkins EIP, which exists in iam regardless of whether Jenkins is up), so
+# they run in parallel. Each reusable workflow keeps its own concurrency group.
+jobs:
+  jenkins:
+    uses: ./.github/workflows/deploy-jenkins.yml
+    secrets:
+      LINODE_SSH_PRIVATE_KEY: ${{ secrets.LINODE_SSH_PRIVATE_KEY }}
+      JENKINS_ADMIN_PASSWORD: ${{ secrets.JENKINS_ADMIN_PASSWORD }}
+      EXPORTER_BASIC_AUTH_HASH: ${{ secrets.EXPORTER_BASIC_AUTH_HASH }}
+      ADMIN_CIDR: ${{ secrets.ADMIN_CIDR }}
+
+  monitoring:
+    uses: ./.github/workflows/deploy-monitoring.yml
+    secrets:
+      GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+      LINODE_EXPORTER_PASSWORD: ${{ secrets.LINODE_EXPORTER_PASSWORD }}
+      JENKINS_EXPORTER_PASSWORD: ${{ secrets.JENKINS_EXPORTER_PASSWORD }}

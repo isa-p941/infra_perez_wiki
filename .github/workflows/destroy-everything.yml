@@ -1,0 +1,26 @@
+name: Destroy Everything
+
+# THE OTHER BUTTON: tears down both stacks to stop the cost.
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+# Both ephemeral stacks torn down in parallel. Leaves the persistent pieces
+# (bootstrap, iam, the Jenkins EIP) alone.
+jobs:
+  jenkins:
+    uses: ./.github/workflows/destroy-jenkins.yml
+    secrets:
+      LINODE_SSH_PRIVATE_KEY: ${{ secrets.LINODE_SSH_PRIVATE_KEY }}
+      JENKINS_ADMIN_PASSWORD: ${{ secrets.JENKINS_ADMIN_PASSWORD }}
+      EXPORTER_BASIC_AUTH_HASH: ${{ secrets.EXPORTER_BASIC_AUTH_HASH }}
+      ADMIN_CIDR: ${{ secrets.ADMIN_CIDR }}
+
+  monitoring:
+    uses: ./.github/workflows/destroy-monitoring.yml
+    secrets:
+      GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+      LINODE_EXPORTER_PASSWORD: ${{ secrets.LINODE_EXPORTER_PASSWORD }}

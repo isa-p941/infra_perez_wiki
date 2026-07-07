@@ -1,7 +1,14 @@
 name: Destroy Monitoring
 
-# Manual only
 on:
+  # Callable from destroy-everything (secrets passed in).
+  workflow_call:
+    secrets:
+      GRAFANA_ADMIN_PASSWORD:
+        required: true
+      LINODE_EXPORTER_PASSWORD:
+        required: true
+  # Direct button (reads this repo's own secrets).
   workflow_dispatch:
 
 permissions:

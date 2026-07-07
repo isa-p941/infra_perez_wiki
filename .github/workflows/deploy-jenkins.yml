@@ -1,4 +1,4 @@
-name: Deploy Jenkins Only
+name: Deploy Jenkins
 
 on:
   # Called by perez_wiki's "Deploy via Jenkins" workflow (secrets passed in).
