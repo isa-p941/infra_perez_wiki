@@ -5,7 +5,7 @@ variable "azure_region" {
 
 variable "github_org" {
   type    = string
-  default = "evolvingsewage"
+  default = "isa-p941"
 }
 
 variable "perez_wiki_repo" {
