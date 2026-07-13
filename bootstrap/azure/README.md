@@ -13,7 +13,7 @@ Deterministic naming (storage account name derived from your Azure
 subscription ID) so `azure/monitoring`'s backend config can reference the
 same name without needing to read this config's outputs first.
 
-## Applied manually, once
+## Initialization
 
 Apply it once by hand, and any workflow that needs this storage account just
 assumes it exists.
@@ -44,4 +44,4 @@ order of likelihood:
    Remove-Item -Recurse -Force .terraform, .terraform.lock.hcl
    terraform init
    ```
-
+   

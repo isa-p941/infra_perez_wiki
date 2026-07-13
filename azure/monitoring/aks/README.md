@@ -348,14 +348,6 @@ genuinely needs a token, and the chart already scopes it to a read-only
 ClusterRole. Disabling automount here would just break it for no security
 gain, so it's left as the chart's default.
 
-## Still to come
-
-Log shipping (Promtail) from the Linode box, and optional nginx
-request-metrics (requires editing tracked website config, deferred
-pending a separate decision). The GitHub Actions deploy/destroy workflows
-now exist (`deploy-monitoring.yml`/`destroy-monitoring.yml`) but haven't
-been run through the button yet, only applied by hand.
-
 ## Note: Grafana/Loki chart repository
 
 `helm_release.grafana`/`helm_release.loki` point at
