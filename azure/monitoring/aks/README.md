@@ -1,6 +1,6 @@
 # azure/monitoring/aks
 
-Real secrets (`grafana_admin_password`,
+Secrets (`grafana_admin_password`,
 `linode_exporter_password`) come from sensitive Terraform variables, see
 "Secrets".
 
@@ -63,7 +63,7 @@ The `deploy-monitoring.yml` workflow passes all of these as `TF_VAR_*` env
 on the apply step. Set them locally the same way for a hand apply:
 
 ```powershell
-$env:TF_VAR_grafana_admin_password = "<real password>"
+$env:TF_VAR_grafana_admin_password = "<your password>"
 $env:TF_VAR_linode_exporter_password = "<matches the Linode box's hash>"
 $env:TF_VAR_jenkins_exporter_target = "<jenkins EIP>:9100"   # optional
 $env:TF_VAR_jenkins_exporter_password = "<matches the Jenkins box's hash>"  # optional
@@ -74,14 +74,14 @@ $env:TF_VAR_jenkins_exporter_password = "<matches the Jenkins box's hash>"  # op
 - **Local `kind` testing** uses the plain `helm/*.yaml` files directly with
   the `helm` CLI. Any password in these files (`grafana-values.yaml`'s
   `adminPassword`, `prometheus-values.yaml`'s scrape `basic_auth.password`)
-  is a non-functional placeholder. Fine to commit, never the real value.
+  is a non-functional placeholder. Fine to commit, never the actual value.
   ```powershell
   helm upgrade --install prometheus prometheus-community/prometheus `
     --namespace monitoring --kube-context kind-grafana-test `
     -f azure/monitoring/aks/helm/prometheus-values.yaml
   ```
 - **Azure Live Deployment** goes through Terraform (`helm_release` in
-  `main.tf`), which injects the real values at `apply` time:
+  `main.tf`), which injects the actual values at `apply` time:
   - Grafana: `helm/grafana-values.yaml` plus a `set_sensitive` block
     overriding `adminPassword` with `var.grafana_admin_password`.
   - Prometheus: `helm/prometheus-values.yaml.tftpl` (not the plain
@@ -116,7 +116,7 @@ also needs the two `TF_VAR_*` secrets above set in the shell.
 
 ## Local testing with `kind` 
 
-Iterating on Helm values against the real AKS cluster costs real money per
+Iterating on Helm values against the live AKS cluster costs real money per
 hour and takes time to spin up. I ain't a bank and this stuff adds up QUICK.
  
 Here's how I tested against a free local cluster first:
@@ -182,7 +182,7 @@ minimum, see `SystemPoolSkuTooLow` above). Fixed by dropping
 `node_count` to 2.
 
 **`helm_release.loki` on the Azure cluster: `context deadline exceeded`,
-`loki-chunks-cache-0` stuck `Pending`**: only surfaced against the real
+`loki-chunks-cache-0` stuck `Pending`**: only surfaced against the live
 AKS cluster, never against local `kind`. `kubectl describe pod
 loki-chunks-cache-0` showed `FailedScheduling: 0/2 nodes are available: 2
 Insufficient memory`, and the pod's actual memory request was ~9.6GiB,
@@ -190,7 +190,7 @@ more than an entire `Standard_D2s_v7` node (7GiB) has. The chart's
 `chunksCache.allocatedMemory` (default `8192` MB) and
 `resultsCache.allocatedMemory` (default `1024` MB, why only the chunks
 cache and not the results cache failed to schedule) size these memcached
-pods for a real production cluster; `kind`'s single, more generously
+pods for a production cluster; `kind`'s single, more generously
 resourced node never exposed this, since local testing never hit an
 actual memory ceiling. Fixed by nuking caches, they never get warm on
 a stack that's torn down between sessions anyway.
@@ -241,7 +241,7 @@ is `prometheus-pushgateway:` (matches the chart dependency name, not a
 simplified camelCase key), so `pushgateway:` was silently ignored the
 whole time and the chart default (`enabled: true`) won. Caught while
 re-verifying the RBAC changes below. That pod had been running unnoticed
-for 108 minutes. `nodeExporter:` has the same mismatch (real key:
+for 108 minutes. `nodeExporter:` has the same mismatch (actual key:
 `prometheus-node-exporter:`), just harmless since `enabled: true` is what
 we wanted anyway. Lesson: always check a chart's actual `Chart.yaml`
 dependency aliases before assuming a values key name, not just its
@@ -267,7 +267,7 @@ If it's missing from the rendered output, the values file is wrong; if
 it's present there but missing from the live cluster's `/config` page,
 the problem is reload/caching, not the values file.
 
-## Cross-cloud target: the real Linode website box
+## Cross-cloud target: the live Linode website box
 
 `node_exporter` installed natively (no Docker, matching
 how the box already runs everything else) on the Linode box as a systemd
@@ -321,7 +321,7 @@ get **no token at all**.
   unnoticed. Loki has no equivalent `rbac.create` toggle; its own `Role`
   template is gated on `sidecar.rules.enabled`.
 
-**Re-verified against local `kind`, and it caught a real regression.
+**Re-verified against local `kind`, and it caught a genuine regression.
 This is exactly why "verified by reading chart templates" isn't the same
 as "verified by running it":** `sidecar.rules.enabled` defaults to
 **`true`** in the `loki` chart, not `false` as originally assumed here.

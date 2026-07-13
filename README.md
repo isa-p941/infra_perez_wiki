@@ -86,7 +86,7 @@ aws/
               IP for the Jenkins box (a stable scrape target for Prometheus,
               kept here so the address survives teardown). Applied once,
               manually, never destroyed by the on-demand lifecycle.
-              Permission set grew from real CI errors (see project
+              Permission set grew from CI errors (see project
               memory/history). Expect to revisit if new AWS actions get
               exercised later.
     compute/  EC2 instance, security group, SSM parameters, Docker
@@ -109,7 +109,7 @@ azure/
             nodes instead of 3), and Helm releases for
             Grafana/Prometheus/Loki. ServiceAccount
             tokens and unused RBAC objects stripped where the workload
-            doesn't need Kubernetes API access. Real secrets come from
+            doesn't need Kubernetes API access. Secrets come from
             Terraform variables. Deployed and destroyed via GitHub Actions
             buttons (deploy-monitoring.yml / destroy-monitoring.yml). See
             azure/monitoring/aks/README.md.

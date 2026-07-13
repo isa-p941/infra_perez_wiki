@@ -15,13 +15,8 @@ same name without needing to read this config's outputs first.
 
 ## Applied manually, once
 
-Same chicken-and-egg reason as `bootstrap/aws`: you can't store state for
-the thing that creates your state storage. This config doesn't attempt
-the belt-and-suspenders auto-bootstrap dance `bootstrap/aws` was designed
-for either. That pattern never actually got wired into the real GitHub
-Actions workflow there (see `bootstrap/aws/README.md`). Apply it once by
-hand, and any workflow that needs this storage account just assumes it
-exists.
+Apply it once by hand, and any workflow that needs this storage account just
+assumes it exists.
 
 ```
 cd bootstrap/azure
@@ -29,8 +24,7 @@ terraform init
 terraform apply
 ```
 
-Requires `az login` already done (`az account show` to verify). Creates
-real Azure resources.
+Requires `az login` already done (`az account show` to verify).
 
 ## Troubleshooting
 

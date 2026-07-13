@@ -25,7 +25,7 @@ survive one either. That trade-off is deliberate, not an oversight.
 - Prometheus scrape config targeting the Linode website box's
   `node_exporter`, over the public internet with basic auth. Scraping the
   AWS Jenkins EC2 instance's own `node_exporter` isn't wired up yet.
-- Real secrets (Grafana admin password, the Linode `node_exporter`
+- Secrets (Grafana admin password, the Linode `node_exporter`
   password) come from Terraform variables, no Key Vault yet, see the root
   README's Secrets section
 - No mounted ServiceAccount tokens or unused RBAC objects for workloads

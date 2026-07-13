@@ -17,7 +17,7 @@ Creates:
 - RBAC role assignments: `Contributor` scoped to just the monitoring
   resource group, and `Storage Blob Data Contributor` scoped to just the
   state storage account from `bootstrap/azure`. This permission set held
-  up through a real AKS apply/destroy cycle without needing any changes.
+  up through a full AKS apply/destroy cycle without needing any changes.
 
 Authentication is OIDC to keep the same approach as the AWS "cluster."
 

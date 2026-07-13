@@ -23,7 +23,7 @@ Creates:
   Jenkins's readiness and trigger the deploy job over SSM instead of the
   public network, since port 8080 is only open to `admin_cidr`), and this
   role's own Terraform state objects. Most of these were found empirically
-  from real `AccessDeniedException` errors during CI runs.
+  from actual `AccessDeniedException` errors during CI runs.
 - `infra-perez-wiki-jenkins-instance` role and instance profile, assumed
   by the EC2 instance itself, scoped to reading its own SSM parameters
   plus `AmazonSSMManagedInstanceCore` (Session Manager shell access, no

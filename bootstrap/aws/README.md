@@ -16,7 +16,7 @@ the bucket already exists or not.
 
 **That automatic create-or-import dance was never actually wired into
 `deploy-jenkins.yml`.** In practice, this config was applied manually,
-once (`terraform apply -var="bucket_already_exists=false"`). The real
+once (`terraform apply -var="bucket_already_exists=false"`). The actual
 workflow just computes the deterministic bucket name and assumes it
 already exists. It doesn't try to create it, retry on conflict, or import
 anything. If this bucket were ever deleted, the workflow would start
@@ -31,4 +31,4 @@ terraform plan -var="bucket_already_exists=false"   # or =true if it already exi
 ```
 
 Requires AWS CLI credentials already configured (`aws sts get-caller-identity`
-to verify). Creates a real S3 bucket.
+to verify). Creates a live S3 bucket.
