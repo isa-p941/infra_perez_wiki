@@ -51,13 +51,11 @@ flowchart TB
 Everything runs from this repo's **Actions** tab. All buttons are manual
 (`workflow_dispatch`):
 
-- **Deploy Everything** / **Destroy Everything** — both stacks at once, in parallel.
-- **Deploy Jenkins** / **Destroy Jenkins** — the AWS side only.
-- **Deploy Monitoring** / **Destroy Monitoring** — the Azure side only.
+- **Deploy Everything** / **Destroy Everything** - both stacks at once, in parallel.
+- **Deploy Jenkins** / **Destroy Jenkins** - AWS
+- **Deploy Monitoring** / **Destroy Monitoring** - Azure
 
-A successful deploy writes the access commands (the `az aks get-credentials` +
-`kubectl port-forward` for Grafana/Prometheus, and the Jenkins URL) into the run's
-summary panel.
+A successful deploy writes the access commands into the summary panel.
 
 One-time setup before any button works:
 
@@ -161,13 +159,13 @@ azure/
 ## Secrets
 
 - **GitHub Secrets** :
-  - `LINODE_SSH_PRIVATE_KEY` — SSH key Jenkins uses to deploy to the Linode box
-  - `JENKINS_ADMIN_PASSWORD` — the Jenkins `admin` user password
-  - `EXPORTER_BASIC_AUTH_HASH` — bcrypt hash for the Jenkins node_exporter's basic auth
-  - `ADMIN_CIDR` — the IP allowed to reach the Jenkins UI (port 8080)
-  - `GRAFANA_ADMIN_PASSWORD` — the Grafana `admin` password
-  - `LINODE_EXPORTER_PASSWORD` — password Prometheus sends to scrape the Linode box
-  - `JENKINS_EXPORTER_PASSWORD` — password Prometheus sends to scrape the Jenkins box
+  - `LINODE_SSH_PRIVATE_KEY` - SSH key Jenkins uses to deploy to the Linode box
+  - `JENKINS_ADMIN_PASSWORD` - the Jenkins `admin` user password
+  - `EXPORTER_BASIC_AUTH_HASH` - bcrypt hash for the Jenkins node_exporter's basic auth
+  - `ADMIN_CIDR` - the IP allowed to reach the Jenkins UI (port 8080)
+  - `GRAFANA_ADMIN_PASSWORD` - the Grafana `admin` password
+  - `LINODE_EXPORTER_PASSWORD` - password Prometheus sends to scrape the Linode box
+  - `JENKINS_EXPORTER_PASSWORD` - password Prometheus sends to scrape the Jenkins box
 
 - **GitHub Variables** :
   - `JENKINS_EXPORTER_TARGET` - the Jenkins Elastic IP as `host:port`
