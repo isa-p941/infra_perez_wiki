@@ -64,8 +64,7 @@ Everything runs from this repo's **Actions** tab.
 
 A successful deploy writes the access commands into the summary panel.
 
-The stacks bill by the hour, so hit the destroy button when you're done. I ain't
-made of money here.
+The stacks bill by the hour, so please hit the destroy button when you're done. 
 
 ## Repo layout
 
