@@ -7,6 +7,13 @@ curl -SL "https://github.com/docker/compose/releases/latest/download/docker-comp
   -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
 
+# Recent docker-compose needs buildx >= 0.17 to build images, and the AL2023
+# docker package doesn't ship it. Pinned so a new release can't break boot.
+mkdir -p /usr/local/lib/docker/cli-plugins
+curl -SL "https://github.com/docker/buildx/releases/download/v0.19.3/buildx-v0.19.3.linux-arm64" \
+  -o /usr/local/lib/docker/cli-plugins/docker-buildx
+chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
+
 mkdir -p /opt/jenkins/secrets /opt/jenkins/exporter-config /opt/jenkins/app/jcasc
 chmod 755 /opt/jenkins/secrets
 
