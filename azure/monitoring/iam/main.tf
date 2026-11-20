@@ -51,6 +51,13 @@ resource "azurerm_role_assignment" "monitoring_rg_contributor" {
   principal_id         = azuread_service_principal.github_actions.object_id
 }
 
+# Lets `az login` see the subscription. Read-only; Contributor stays RG-scoped.
+resource "azurerm_role_assignment" "subscription_reader" {
+  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  role_definition_name = "Reader"
+  principal_id         = azuread_service_principal.github_actions.object_id
+}
+
 resource "azurerm_role_assignment" "state_storage" {
   scope                = data.azurerm_storage_account.tfstate.id
   role_definition_name = "Storage Blob Data Contributor"

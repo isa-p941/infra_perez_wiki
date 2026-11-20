@@ -15,9 +15,12 @@ Creates:
   single `StringLike` condition to match a pattern. One credential for
   `perez_wiki`'s main branch, one for `infra_perez_wiki`'s main branch.
 - RBAC role assignments: `Contributor` scoped to just the monitoring
-  resource group, and `Storage Blob Data Contributor` scoped to just the
-  state storage account from `bootstrap/azure`. This permission set held
-  up through a full AKS apply/destroy cycle without needing any changes.
+  resource group, `Storage Blob Data Contributor` scoped to just the
+  state storage account from `bootstrap/azure`, and `Reader` on the
+  subscription. The `Reader` role is read-only and only exists so that
+  `azure/login` can see the subscription; without it, `az login` fails with
+  "No subscriptions found" because the other two roles are scoped below the
+  subscription.
 
 Authentication is OIDC to keep the same approach as the AWS "cluster."
 
