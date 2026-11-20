@@ -15,6 +15,11 @@ curl -SL "https://github.com/docker/buildx/releases/download/v0.19.3/buildx-v0.1
 chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
 
 mkdir -p /opt/jenkins/secrets /opt/jenkins/exporter-config /opt/jenkins/app/jcasc
+
+# Jenkins home lives on the host (see docker-compose.yml); uid 1000 is the
+# jenkins user inside the image.
+mkdir -p /var/jenkins_home
+chown 1000:1000 /var/jenkins_home
 chmod 755 /opt/jenkins/secrets
 
 aws ssm get-parameter --with-decryption --region "${aws_region}" \

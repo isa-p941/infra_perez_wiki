@@ -12,7 +12,11 @@ services:
     group_add:
       - "${DOCKER_GID}"
     volumes:
-      - jenkins_home:/var/jenkins_home
+      # Host path == container path on purpose: Jenkins starts sibling
+      # containers through the host's docker socket, and their `.:/app`
+      # bind mounts are resolved by the HOST daemon. A named volume would
+      # leave those mounts empty (the workspace path wouldn't exist on the host).
+      - /var/jenkins_home:/var/jenkins_home
       - ./jcasc/jenkins.yaml:/var/jenkins_home/casc/jenkins.yaml:ro
       - /opt/jenkins/secrets:/run/secrets:ro
       - /var/run/docker.sock:/var/run/docker.sock
@@ -32,6 +36,3 @@ services:
       - /opt/jenkins/exporter-config:/etc/node-exporter:ro
     command:
       - "--web.config.file=/etc/node-exporter/web-config.yml"
-
-volumes:
-  jenkins_home:
