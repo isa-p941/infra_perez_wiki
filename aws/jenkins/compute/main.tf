@@ -17,9 +17,11 @@ data "aws_ami" "al2023_arm" {
   most_recent = true
   owners      = ["amazon"]
 
+  # "al2023-ami-2023.*" excludes the "al2023-ami-minimal-*" images, which ship
+  # without the SSM agent and the AWS CLI that the deploy and user_data need.
   filter {
     name   = "name"
-    values = ["al2023-ami-*-arm64"]
+    values = ["al2023-ami-2023.*-arm64"]
   }
 
   filter {
