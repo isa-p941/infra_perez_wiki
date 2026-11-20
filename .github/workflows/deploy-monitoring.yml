@@ -26,9 +26,9 @@ concurrency:
 # azurerm provider/backend uses these plus the GitHub OIDC token to auth.
 env:
   ARM_USE_OIDC: "true"
-  ARM_CLIENT_ID: ee9fae26-0c8e-4e3b-a30b-1ce55cc0b4c3
+  ARM_CLIENT_ID: bd3561a5-ccbd-4b1c-b34c-7955c03c2129
   ARM_TENANT_ID: ce562e30-5079-467d-855b-ebb9ba0228d1
-  ARM_SUBSCRIPTION_ID: 813b03cb-90d8-4571-aa49-e0715c7536b5
+  ARM_SUBSCRIPTION_ID: 904b3215-da10-463b-affb-b11a396c88c6
 
 jobs:
   deploy:
