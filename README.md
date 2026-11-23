@@ -116,7 +116,8 @@ azure/
 
 You might be saying - that seems backwards. Why is your monitoring ephemeral and
 your app persistent? Well, I don't have 230 bucks a month to burn on a small app
-that is mainly evidence of my being able to do some basic stuff in the cloud.
+that is mainly evidence of my basic cloud skills. I haven't checked these prices
+since July of 2026, but I cannot imagine they've gotten any better.
 
 | Piece | Compute | Per demo-hour | Always-on equivalent (for context) |
 |---|---|---|---|
